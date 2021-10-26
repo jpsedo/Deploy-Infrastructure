@@ -1,5 +1,3 @@
-# We strongly recommend using the required_providers block to set the
-# Azure Provider source and version being used
 terraform {
   required_providers {
     azurerm = {
@@ -15,15 +13,26 @@ terraform {
   }
 }
 
-# Configure the Microsoft Azure Provider
 provider "azurerm" {
   features {}
 }
 
 module "linux-server" {
   source           = "../../modules/servers"
-  linux-password   = "Password123"
-  linux-user       = "adminfrb"
+  linux-password   = var.linux_password
+  linux-user       = "adminfrb03"
   environment      = "dev"
   cantidad-servers = 1
+}
+
+module "aks" {
+  source = "../../modules/aks"
+  resource_group_name = module.linux-server.resource-group-name
+  location = module.linux-server.location
+  client_id = var.client_id
+  client_secret = var.client_secret
+}
+
+module "k8s" {
+  source = "../../modules/k8s-deploy"
 }

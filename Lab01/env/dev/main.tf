@@ -7,7 +7,7 @@ terraform {
   }
   backend "azurerm" {
     resource_group_name  = "infra-control-rg"
-    storage_account_name = "iacucreativa"
+    storage_account_name = "iacucreativa1"
     container_name       = "tfstate"
     key                  = "dev.tfstate"
   }

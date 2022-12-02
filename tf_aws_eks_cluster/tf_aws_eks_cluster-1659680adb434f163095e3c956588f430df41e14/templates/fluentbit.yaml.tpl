@@ -1,0 +1,114 @@
+global:
+## Override the deployment namespace
+#   namespaceOverride:
+
+image:
+  repository: amazon/aws-for-fluent-bit
+  tag: 2.13.0
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: "fluent-bit"
+fullnameOverride: "fluent-bit"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: fluentbit
+
+cloudWatch:
+  region: ${region}
+  cluster_name: ${cluster_name}
+
+resources:
+  limits:
+    memory: 250Mi
+  requests:
+    cpu: 50m
+    memory: 50Mi
+
+## Assign a PriorityClassName to pods if set
+# priorityClassName: system-node-critical
+
+updateStrategy:
+  type: RollingUpdate
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+annotations: {}
+  # iam.amazonaws.com/role: arn:aws:iam::123456789012:role/role-for-fluent-bit
+
+env:
+    - name: AWS_REGION
+      valueFrom:
+        configMapKeyRef:
+          name: fluent-bit-cluster-info
+          key: logs.region
+    - name: CLUSTER_NAME
+      valueFrom:
+        configMapKeyRef:
+          name: fluent-bit-cluster-info
+          key: cluster.name
+    - name: HTTP_SERVER
+      valueFrom:
+        configMapKeyRef:
+          name: fluent-bit-cluster-info
+          key: http.server
+    - name: HTTP_PORT
+      valueFrom:
+        configMapKeyRef:
+          name: fluent-bit-cluster-info
+          key: http.port
+    - name: READ_FROM_HEAD
+      valueFrom:
+        configMapKeyRef:
+          name: fluent-bit-cluster-info
+          key: read.head
+    - name: READ_FROM_TAIL
+      valueFrom:
+        configMapKeyRef:
+          name: fluent-bit-cluster-info
+          key: read.tail
+    - name: HOST_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: CI_VERSION
+      value: "k8s/1.3.8"
+  
+volumes:
+  - name: fluentbitstate
+    hostPath:
+      path: /var/fluent-bit/state
+  - name: varlog
+    hostPath:
+      path: /var/log
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/docker/containers
+  - name: runlogjournal
+    hostPath:
+      path: /run/log/journal
+  - name: dmesg
+    hostPath:
+      path: /var/log/dmesg
+      
+volumeMounts:
+  - name: fluentbitstate
+    mountPath: /var/fluent-bit/state
+  - name: varlog
+    mountPath: /var/log
+    readOnly: true
+  - name: varlibdockercontainers
+    mountPath: /var/lib/docker/containers
+    readOnly: true
+  - name: runlogjournal
+    mountPath: /run/log/journal
+    readOnly: true
+  - name: dmesg
+    mountPath: /var/log/dmesg
+    readOnly: true

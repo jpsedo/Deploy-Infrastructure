@@ -1,0 +1,35 @@
+# This github workflow:
+# - gets last version from CHANGELOG.md
+# - creates a new release tag with the newer version
+#############################################################################
+
+name: Release
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Parse Changelog # This task removes the version's 'v' prefix from the version 
+        id: changelog
+        uses: ocavue/changelog-parser-action@v1
+        with:
+          removeMarkdown: false
+          filePath: "./CHANGELOG.md"
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.changelog.outputs.latestVersion }}
+          release_name: v${{ steps.changelog.outputs.latestVersion }}
+          body: ${{ steps.changelog.outputs.latestBody }}

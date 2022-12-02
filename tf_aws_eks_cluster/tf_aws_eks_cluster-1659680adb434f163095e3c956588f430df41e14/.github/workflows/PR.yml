@@ -1,0 +1,64 @@
+# This github workflow:
+# - calculate next version based on commit messages
+# - uses version, PR title and body to update the CHANGELOG.md
+# - runs the `terraform fmt` to update files format
+# - Updates the `USAGE.md` using terraform docs
+#############################################################################
+
+name: PR
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Get previous release
+        id: last_release
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: v1.0.0
+
+      - name: Calculates next release version
+        uses: paulhatch/semantic-version@v4.0.2
+        id: changelog
+        with:
+          major_pattern: "/^((C|c)hange)|(B|b)reak/"
+          minor_pattern: "/(A|a)dd/"
+          format: "v${major}.${minor}.${patch}"
+          short_tags: false
+          bump_each_commit: false
+
+      - name: Update changelog
+        run: |
+          ESCAPED_NEW_VERSION=$(echo "${{ steps.changelog.outputs.version }}" | perl -0 -pe "s/\./\\\./g")
+          ESCAPED_LAST_VERSION=$(echo "${{ steps.last_release.outputs.tag }}" | perl -0 -pe "s/\./\\\./g")
+          perl -i -0 -pe "s/# Changelog.*?## $ESCAPED_LAST_VERSION/# Changelog\n\n## $ESCAPED_NEW_VERSION\n${{ github.event.pull_request.title }}\n${{ github.event.pull_request.body }}\n\n## $ESCAPED_LAST_VERSION/gss" CHANGELOG.md
+
+      - name: terraform fmt
+        uses: dflook/terraform-fmt@v1
+        with:
+          path: /
+
+      - name: Update PR files
+        uses: terraform-docs/gh-actions@v0.10.0
+        with:
+          working-dir: .
+          output-file: USAGE.md
+          output-method: inject
+          git-push: "false"
+
+      - name: Commit changes
+        uses: test-room-7/action-update-file@v1
+        with:
+          file-path: '**/*'
+          commit-msg: Automated TF format and changelog update
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref }}

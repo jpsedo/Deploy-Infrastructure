@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "fluent-bit-cluster-info" 
+  namespace: {{ include "aws-for-fluent-bit.namespace" . }}
+  labels:
+    {{- include "aws-for-fluent-bit.labels" . | nindent 4 }}
+data:
+  cluster.name: {{ .Values.cloudWatch.cluster_name }}
+  http.port: "2020"
+  http.server: "On"
+  logs.region: {{ .Values.cloudWatch.region }}
+  read.head: "Off"
+  read.tail: "On"

@@ -10,28 +10,14 @@ terraform {
 }
 
 provider "aws" {
-  profile = "default"
+  profile = "Autozona"
   region  = "us-east-1"
 }
 
-resource "aws_iam_role" "k8s_masters_role" {
-  count              = var.enabled ? 1 : 0
-  name               = "k8s_masters_role_${var.cluster_name}"
-  assume_role_policy = <<EOP
-{
-  "Version": "2012-10-17",
-  "Statement": [
-   {
-     "Effect": "Allow",
-     "Principal": {
-        "Service": "eks.amazonaws.com"   
-     },
-     "Action": "sts:AssumeRole"  
-   }     
-  ]    
-}
-EOP
-  tags               = var.tags
+resource "aws_instance" "ec2" {
+  ami = "ami-0dfcb1ef8550277af"
+  instance_type = "t2.micro"
+
 }
 
 
